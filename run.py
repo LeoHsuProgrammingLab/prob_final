@@ -4,6 +4,8 @@ import json
 import numpy as np
 import random
 import nltk
+import matplotlib.pyplot as plt
+from tqdm.auto import tqdm
 np.set_printoptions(threshold=np.inf)
 
 import torch
@@ -79,14 +81,29 @@ if __name__ == '__main__':
     # set the correct vocab size: 10, block size: chickenrabbit -> 10, gcd -> 6
     config.model.vocab_size = train_dataset.get_vocab_size()
     config.model.block_size = train_dataset.get_block_size()
-    model = GPT(config.model)
-    trainer = Trainer(config.trainer, model, train_dataset, test_dataset)
-    trainer.set_callback('on_batch_end', batch_end_callback)
-    stop_iteration = trainer.run()
-    if stop_iteration != -1:
-        print(f'The final iteration of this round is {stop_iteration}!')
-    else:
-        print('It cannot reach 0.9 acc within max_iteration steps...')
 
+    # start training
+    result = []
+    for i in tqdm(range(100)):
+        model = GPT(config.model)
+        trainer = Trainer(config.trainer, model, train_dataset, test_dataset)
+        trainer.set_callback('on_batch_end', batch_end_callback)
+        stop_iteration = trainer.run()
+        if stop_iteration != -1:
+            print(f'The final iteration of this round is {stop_iteration}!')
+        else:
+            print('It cannot reach 0.9 acc within max_iteration steps...')
+        result.append(stop_iteration)
+    
+    # histogram
+    plt.hist(result, bins=range(0, 150, 1), color='blue', alpha=0.7)
+
+    # Add titles and labels
+    plt.title('Histogram of Iterations')
+    plt.xlabel('Value')
+    plt.ylabel('Frequency')
+
+    # Show the plot
+    plt.savefig('histogram.png')
 
     
