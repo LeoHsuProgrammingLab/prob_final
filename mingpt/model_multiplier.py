@@ -110,6 +110,8 @@ class GPT(nn.Module):
         C.embd_pdrop = 0.1
         C.resid_pdrop = 0.1
         C.attn_pdrop = 0.1
+        # Gaussian or Xavier
+        C.init_type = 'xavier'
         return C
 
     def __init__(self, config):
@@ -162,12 +164,20 @@ class GPT(nn.Module):
 
     def _init_weights(self, module):
         # TODO:  you may choose different initialization
+        config = self.get_default_config()
+
         if isinstance(module, nn.Linear):
-            torch.nn.init.xavier_uniform_(module.weight, gain=1.0)
+            if config.init_type == 'gaussian':
+                torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
+            elif config.init_type == 'xavier':
+                torch.nn.init.xavier_uniform_(module.weight, gain=1.0)
             if module.bias is not None:
                 torch.nn.init.zeros_(module.bias)
         elif isinstance(module, nn.Embedding):
-            torch.nn.init.torch.nn.init.xavier_uniform_(module.weight, gain=1.0)
+            if config.init_type == 'gaussian':
+                torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
+            elif config.init_type == 'xavier':
+                torch.nn.init.xavier_uniform_(module.weight, gain=1.0)
         elif isinstance(module, nn.LayerNorm):
             torch.nn.init.zeros_(module.bias)
             torch.nn.init.ones_(module.weight)

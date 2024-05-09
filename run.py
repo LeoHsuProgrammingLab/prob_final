@@ -70,6 +70,7 @@ if __name__ == '__main__':
 
     config = get_config()
     setup_logging(config)
+    print(config.model.init_type)
 
     # TODO: try different seed for model
     set_seed(config.system.init_seed)
@@ -100,11 +101,19 @@ if __name__ == '__main__':
     plt.hist(result, color='blue', alpha=0.7)
 
     # Add titles and labels
-    plt.title('Histogram of Iterations')
-    plt.xlabel('Value')
+    plt.title(f'Histogram of {config.model.init_type}')
+    plt.xlabel('Iterations')
     plt.ylabel('Frequency')
 
     # Show the plot
-    plt.savefig('histogram.png')
+    plt.savefig(f'histogram_{config.model.init_type}.png')
+
+    # Open the file in write mode ('w')
+    with open(f'output_{config.model.init_type}.txt', 'w') as file:
+        for item in result:
+            # Write each item on a new line
+            file.write(f"{item}\n")
+
+    print("Data has been written to file.")
 
     
