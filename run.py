@@ -95,8 +95,9 @@ if __name__ == '__main__':
             print('It cannot reach 0.9 acc within max_iteration steps...')
         result.append(stop_iteration)
     
+    print(result)
     # histogram
-    plt.hist(result, bins=range(0, 150, 1), color='blue', alpha=0.7)
+    plt.hist(result, color='blue', alpha=0.7)
 
     # Add titles and labels
     plt.title('Histogram of Iterations')
