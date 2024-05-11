@@ -27,7 +27,7 @@ def get_config():
     # system
     C.system = CN()
     # TODO: random seed for model can be set here
-    C.system.init_seed = 62 # will change the weight initialization
+    C.system.init_seed = 100 # will change the weight initialization
     C.system.work_dir = './test'
 
     # data
@@ -64,6 +64,27 @@ def batch_end_callback(trainer, model, train_dataset, test_dataset):
         model.train()
     return -1
 
+def plot(result: list, config: CN):
+    # histogram
+    plt.hist(result, color='blue', alpha=0.7)
+
+    # Add titles and labels
+    plt.title(f'{config.trainer.task} - {config.model.init_type} - {config.system.init_seed}')
+    plt.xlabel('Iterations')
+    plt.ylabel('Frequency')
+
+    # Show the plot
+    plt.savefig(f'histogram_{config.model.init_type}_{config.system.init_seed}.png')
+
+def write2txt(result: list, config: CN, fname: str):
+    # Open the file in write mode ('w')
+    with open(f'output_{config.model.init_type}.txt', 'w') as file:
+        for item in result:
+            # Write each item on a new line
+            file.write(f"{item}\n")
+
+    print("Data has been written to file.")
+
 # -----------------------------------------------------------------------------
 
 if __name__ == '__main__':
@@ -97,23 +118,7 @@ if __name__ == '__main__':
         result.append(stop_iteration)
     
     print(result)
-    # histogram
-    plt.hist(result, color='blue', alpha=0.7)
 
-    # Add titles and labels
-    plt.title(f'Histogram of {config.model.init_type}')
-    plt.xlabel('Iterations')
-    plt.ylabel('Frequency')
-
-    # Show the plot
-    plt.savefig(f'histogram_{config.model.init_type}.png')
-
-    # Open the file in write mode ('w')
-    with open(f'output_{config.model.init_type}.txt', 'w') as file:
-        for item in result:
-            # Write each item on a new line
-            file.write(f"{item}\n")
-
-    print("Data has been written to file.")
-
-    
+    plot(result, config)
+    fname = f'output_{config.model.init_type}_{config.system.init_seed}_{config.trainer.task}.txt'
+    write2txt(result, config, fname)
