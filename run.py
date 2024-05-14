@@ -10,7 +10,7 @@ np.set_printoptions(threshold=np.inf)
 
 import torch
 from ChickenRabbit import ChickenRabbitDataset, eval_split
-# from GCD import GCDDataset, eval_split
+# from GCD import GCDDataset, eval_split 
 from torch.utils.data.dataloader import DataLoader
 torch.set_printoptions(profile="full")
 
@@ -27,11 +27,12 @@ def get_config():
     # system
     C.system = CN()
     # TODO: random seed for model can be set here
-    C.system.init_seed = 100 # will change the weight initialization
+    C.system.init_seed = 62 # will change the weight initialization
     C.system.work_dir = './test'
 
     # data
     C.data = ChickenRabbitDataset.get_default_config()
+    # C.data = GCDDataset.get_default_config()
 
     # model
     C.model = GPT.get_default_config()
@@ -39,7 +40,8 @@ def get_config():
     
     # trainer
     C.trainer = Trainer.get_default_config()
-    C.trainer.task = "ChickenRabbit" # or gcd
+    # C.trainer.task = "ChickenRabbit" # or gcd
+    C.trainer.task = "CR"
     return C
 
 def batch_end_callback(trainer, model, train_dataset, test_dataset):
@@ -78,7 +80,7 @@ def plot(result: list, config: CN):
 
 def write2txt(result: list, config: CN, fname: str):
     # Open the file in write mode ('w')
-    with open(f'output_{config.model.init_type}.txt', 'w') as file:
+    with open(f'output_{config.model.init_type}_{config.trainer.task}.txt', 'w') as file:
         for item in result:
             # Write each item on a new line
             file.write(f"{item}\n")
@@ -87,8 +89,7 @@ def write2txt(result: list, config: CN, fname: str):
 
 # -----------------------------------------------------------------------------
 
-if __name__ == '__main__':
-
+def main():
     config = get_config()
     setup_logging(config)
     print(config.model.init_type)
@@ -97,8 +98,11 @@ if __name__ == '__main__':
     set_seed(config.system.init_seed)
 
     # TODO: try different seed to adjust the data order of train/test-set
-    train_dataset = ChickenRabbitDataset(config.data, split='train', seed=0)
-    test_dataset  = ChickenRabbitDataset(config.data, split='test', seed=0)
+    seed = 666
+    train_dataset = ChickenRabbitDataset(config.data, split='train', seed=seed)
+    test_dataset  = ChickenRabbitDataset(config.data, split='test', seed=seed)
+    # train_dataset = GCDDataset(config.data, split='train', seed=seed)
+    # test_dataset  = GCDDataset(config.data, split='test', seed=seed)
 
     # set the correct vocab size: 10, block size: chickenrabbit -> 10, gcd -> 6
     config.model.vocab_size = train_dataset.get_vocab_size()
@@ -120,5 +124,8 @@ if __name__ == '__main__':
     print(result)
 
     plot(result, config)
-    fname = f'output_{config.model.init_type}_{config.system.init_seed}_{config.trainer.task}.txt'
+    fname = f'output_{config.model.init_type}_sys{config.system.init_seed}_data{seed}_{config.trainer.task}.txt'
     write2txt(result, config, fname)
+
+if __name__ == '__main__':
+    main()
