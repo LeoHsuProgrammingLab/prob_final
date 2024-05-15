@@ -89,7 +89,16 @@ def write2txt(result: list, config: CN, fname: str):
 
 # -----------------------------------------------------------------------------
 
-def main():
+def set_seed_all(seed):
+    """Set the seed for reproducibility."""
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)  # if you are using CUDA
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+def weight_init_test():
     config = get_config()
     setup_logging(config)
     print(config.model.init_type)
@@ -98,9 +107,9 @@ def main():
     set_seed(config.system.init_seed)
 
     # TODO: try different seed to adjust the data order of train/test-set
-    seed = 666
-    train_dataset = ChickenRabbitDataset(config.data, split='train', seed=seed)
-    test_dataset  = ChickenRabbitDataset(config.data, split='test', seed=seed)
+    data_seed = 0
+    train_dataset = ChickenRabbitDataset(config.data, split='train', seed=data_seed)
+    test_dataset  = ChickenRabbitDataset(config.data, split='test', seed=data_seed)
     # train_dataset = GCDDataset(config.data, split='train', seed=seed)
     # test_dataset  = GCDDataset(config.data, split='test', seed=seed)
 
@@ -126,6 +135,41 @@ def main():
     plot(result, config)
     fname = f'output_{config.model.init_type}_sys{config.system.init_seed}_data{seed}_{config.trainer.task}.txt'
     write2txt(result, config, fname)
+
+def data_order_test():
+    config = get_config()
+    setup_logging(config)
+    print(config.model.init_type)
+
+    # start training
+    result = []
+    for i in tqdm(range(100)):
+        data_seed = np.random.randint(0, 1000)
+        train_dataset = ChickenRabbitDataset(config.data, split='train', seed=data_seed)
+        test_dataset  = ChickenRabbitDataset(config.data, split='test', seed=data_seed)
+
+        config.model.vocab_size = train_dataset.get_vocab_size()
+        config.model.block_size = train_dataset.get_block_size()
+        
+        set_seed_all(config.system.init_seed)
+        model = GPT(config.model)
+
+        trainer = Trainer(config.trainer, model, train_dataset, test_dataset)
+        trainer.set_callback('on_batch_end', batch_end_callback)
+        stop_iteration = trainer.run()
+        if stop_iteration != -1:
+            print(f'The final iteration of this round is {stop_iteration}!')
+        else:
+            print('It cannot reach 0.9 acc within max_iteration steps...')
+        result.append(stop_iteration)
+
+    print(result)
+    write2txt(result, config, f'output_{config.model.init_type}_sys{config.system.init_seed}_{config.trainer.task}.txt')
+
+def main():
+    # weight_init_test()
+    data_order_test()
+    # test()
 
 if __name__ == '__main__':
     main()
