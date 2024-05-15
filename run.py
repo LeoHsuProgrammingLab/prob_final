@@ -131,9 +131,8 @@ def weight_init_test():
         result.append(stop_iteration)
     
     print(result)
-
     plot(result, config)
-    fname = f'output_{config.model.init_type}_sys{config.system.init_seed}_data{seed}_{config.trainer.task}.txt'
+    fname = f'output_{config.model.init_type}_sys{config.system.init_seed}_data{data_seed}_{config.trainer.task}.txt'
     write2txt(result, config, fname)
 
 def data_order_test():
@@ -164,7 +163,7 @@ def data_order_test():
         result.append(stop_iteration)
 
     print(result)
-    write2txt(result, config, f'output_{config.model.init_type}_sys{config.system.init_seed}_{config.trainer.task}.txt')
+    write2txt(result, config, f'output_DataOrder_{config.model.init_type}_sys{config.system.init_seed}_{config.trainer.task}.txt')
 
 def main():
     # weight_init_test()
