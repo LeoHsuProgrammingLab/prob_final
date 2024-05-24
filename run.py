@@ -9,8 +9,8 @@ from tqdm.auto import tqdm
 np.set_printoptions(threshold=np.inf)
 
 import torch
-from ChickenRabbit import ChickenRabbitDataset, eval_split
-# from GCD import GCDDataset, eval_split 
+from ChickenRabbit import ChickenRabbitDataset, eval_split as eval_split_CR
+from GCD import GCDDataset, eval_split as eval_split_GCD
 from torch.utils.data.dataloader import DataLoader
 torch.set_printoptions(profile="full")
 
@@ -21,18 +21,20 @@ from itertools import permutations
 
 # -----------------------------------------------------------------------------
 
-def get_config():
+def get_config(type = "GCD"):
     C = CN()
 
     # system
     C.system = CN()
     # TODO: random seed for model can be set here
-    C.system.init_seed = 62 # will change the weight initialization
+    C.system.init_seed = 0 # will change the weight initialization
     C.system.work_dir = './test'
 
     # data
-    C.data = ChickenRabbitDataset.get_default_config()
-    # C.data = GCDDataset.get_default_config()
+    if type == "CR":
+        C.data = ChickenRabbitDataset.get_default_config()
+    else:
+        C.data = GCDDataset.get_default_config()
 
     # model
     C.model = GPT.get_default_config()
@@ -40,11 +42,18 @@ def get_config():
     
     # trainer
     C.trainer = Trainer.get_default_config()
-    # C.trainer.task = "ChickenRabbit" # or gcd
-    C.trainer.task = "CR"
+    if type == "CR":
+        C.trainer.task = "ChickenRabbit"
+    else: 
+        C.trainer.task = "GCD"
     return C
 
-def batch_end_callback(trainer, model, train_dataset, test_dataset):
+def batch_end_callback(trainer, model, train_dataset, test_dataset, type="GCD"):
+    if type == "CR":
+        eval_split = eval_split_CR
+    else:
+        eval_split = eval_split_GCD
+
     if trainer.iter_num % 10 == 0:
         print(f"iter_dt {trainer.iter_dt * 1000:.2f}ms; iter {trainer.iter_num}: train loss {trainer.loss.item():.5f}")
 
@@ -141,16 +150,20 @@ def data_order_test():
     print(config.model.init_type)
 
     # start training
+    data_seed = 0
     result = []
-    for i in tqdm(range(100)):
-        data_seed = np.random.randint(0, 1000)
-        train_dataset = ChickenRabbitDataset(config.data, split='train', seed=data_seed)
-        test_dataset  = ChickenRabbitDataset(config.data, split='test', seed=data_seed)
+    for i in tqdm(range(1)):
+        if config.trainer.task == "ChickenRabbit":
+            train_dataset = ChickenRabbitDataset(config.data, split='train', seed=data_seed)
+            test_dataset  = ChickenRabbitDataset(config.data, split='test', seed=data_seed)
+        else:
+            train_dataset = GCDDataset(config.data, split='train', seed=data_seed)
+            test_dataset  = GCDDataset(config.data, split='test', seed=data_seed)
 
         config.model.vocab_size = train_dataset.get_vocab_size()
         config.model.block_size = train_dataset.get_block_size()
         
-        set_seed_all(config.system.init_seed)
+        set_seed(config.system.init_seed)
         model = GPT(config.model)
 
         trainer = Trainer(config.trainer, model, train_dataset, test_dataset)
@@ -163,12 +176,10 @@ def data_order_test():
         result.append(stop_iteration)
 
     print(result)
-    write2txt(result, config, f'output_DataOrder_{config.model.init_type}_sys{config.system.init_seed}_{config.trainer.task}.txt')
 
 def main():
     # weight_init_test()
     data_order_test()
-    # test()
 
 if __name__ == '__main__':
-    main()
+    main()    

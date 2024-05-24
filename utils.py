@@ -1,15 +1,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import statsmodels.api as sm
 
 def turn_txt_into_list(file_path):
     with open(file_path, 'r') as f:
         lines = f.readlines()
-    return [line.strip() for line in lines]
+    
+    data = [line.strip() for line in lines]
+    return np.array(data, dtype=float)
 
 def show_mean_std(file_path, title: str):
     list_data = turn_txt_into_list(file_path)
-    list_data = np.array(list_data, dtype=float)
     print(title)
     print(f"Mean: {round(list_data.mean(), 2)}, std: {round(list_data.std(), 2)}")
     return list_data
@@ -30,9 +30,9 @@ def show_results():
     histogram(xavier_GCD, "output_result/histogram_xavier_GCD.png", "GCD", "Xavier")
     histogram(gaussian_CR, "output_result/histogram_gaussian_CR.png", "CR", "Gaussian")
     histogram(gaussian_GCD, "output_result/histogram_gaussian_GCD.png", "GCD", "Gaussian")
-    histogram(xavier_CR, "output_result/histogram_data_xavier_CR.png", "CR", "Seed 62")
+    histogram(xavier_CR, "output_result/histogram_data_xavier_CR.png", "CR", "Seed 0")
     histogram(data_order_xavier_CR, "output_result/histogram_data_order_xavier_CR.png", "CR", "Seed 666")
-    histogram(xavier_GCD, "output_result/histogram_data_xavier_GCD.png", "GCD", "Seed 62")
+    histogram(xavier_GCD, "output_result/histogram_data_xavier_GCD.png", "GCD", "Seed 0")
     histogram(data_order_xavier_GCD, "output_result/histogram_data_order_xavier_GCD.png", "GCD", "Seed 666")
 
 # def QQPlot(data1: np.ndarray, save_path: str):

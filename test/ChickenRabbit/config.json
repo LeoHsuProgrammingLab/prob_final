@@ -1,6 +1,6 @@
 {
     "system": {
-        "init_seed": 100,
+        "init_seed": 0,
         "work_dir": "./test"
     },
     "data": {
@@ -16,7 +16,7 @@
         "embd_pdrop": 0.1,
         "resid_pdrop": 0.1,
         "attn_pdrop": 0.1,
-        "init_type": "Xavier"
+        "init_type": "Const"
     },
     "trainer": {
         "device": "cuda",
