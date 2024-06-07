@@ -16,8 +16,7 @@ torch.set_printoptions(profile="full")
 from mingpt.utils import set_seed, setup_logging, CfgNode as CN
 # import setting
 import time
-from order import *
-
+from GCDOrder import GCDOrder
 class GCDDataset(Dataset):
 
     @staticmethod
@@ -78,9 +77,13 @@ class GCDDataset(Dataset):
         test_data = torch.tensor(test_data, dtype=torch.long)
         train_data = torch.tensor(train_data, dtype=torch.long)
 
-        train_data = zero_first(train_data)
+        train_data = GCDOrder.less_hard_first(train_data)
         
         self.ixes = test_data if split == 'test' else train_data
+        # save in .pkl
+        # if split == 'train':
+        #     print(self.ixes.shape)
+        #     torch.save(self.ixes, 'GCD.pkl')
 
     def get_vocab_size(self):
         return 10 # digits 0..9

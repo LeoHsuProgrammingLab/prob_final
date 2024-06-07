@@ -21,7 +21,7 @@ from itertools import permutations
 
 # -----------------------------------------------------------------------------
 
-def get_config(type = "GCD"):
+def get_config(type = "CR"):
     C = CN()
 
     # system
@@ -48,7 +48,7 @@ def get_config(type = "GCD"):
         C.trainer.task = "GCD"
     return C
 
-def batch_end_callback(trainer, model, train_dataset, test_dataset, type="GCD"):
+def batch_end_callback(trainer, model, train_dataset, test_dataset, type="CR"):
     if type == "CR":
         eval_split = eval_split_CR
     else:
@@ -87,9 +87,11 @@ def plot(result: list, config: CN):
     # Show the plot
     plt.savefig(f'histogram_{config.model.init_type}_{config.system.init_seed}.png')
 
-def write2txt(result: list, config: CN, fname: str):
+def write2txt(result: list, config: CN, fname: str = None):
     # Open the file in write mode ('w')
-    with open(f'output_{config.model.init_type}_{config.trainer.task}.txt', 'w') as file:
+    if fname is None:
+        fname = f'output_{config.model.init_type}_{config.trainer.task}.txt'
+    with open(fname, 'w') as file:
         for item in result:
             # Write each item on a new line
             file.write(f"{item}\n")
@@ -144,7 +146,7 @@ def weight_init_test():
     fname = f'output_{config.model.init_type}_sys{config.system.init_seed}_data{data_seed}_{config.trainer.task}.txt'
     write2txt(result, config, fname)
 
-def data_order_test():
+def data_order_test_2_1():
     config = get_config()
     setup_logging(config)
     print(config.model.init_type)
@@ -152,18 +154,54 @@ def data_order_test():
     # start training
     data_seed = 0
     result = []
-    for i in tqdm(range(1)):
-        if config.trainer.task == "ChickenRabbit":
-            train_dataset = ChickenRabbitDataset(config.data, split='train', seed=data_seed)
-            test_dataset  = ChickenRabbitDataset(config.data, split='test', seed=data_seed)
-        else:
-            train_dataset = GCDDataset(config.data, split='train', seed=data_seed)
-            test_dataset  = GCDDataset(config.data, split='test', seed=data_seed)
 
-        config.model.vocab_size = train_dataset.get_vocab_size()
-        config.model.block_size = train_dataset.get_block_size()
-        
-        set_seed(config.system.init_seed)
+    if config.trainer.task == "ChickenRabbit":
+        train_dataset = ChickenRabbitDataset(config.data, split='train', seed=data_seed)
+        test_dataset  = ChickenRabbitDataset(config.data, split='test', seed=data_seed)
+    else:
+        train_dataset = GCDDataset(config.data, split='train', seed=data_seed)
+        test_dataset  = GCDDataset(config.data, split='test', seed=data_seed)
+
+    config.model.vocab_size = train_dataset.get_vocab_size()
+    config.model.block_size = train_dataset.get_block_size()
+    
+    set_seed(config.system.init_seed)
+
+    # start training
+    model = GPT(config.model)
+
+    trainer = Trainer(config.trainer, model, train_dataset, test_dataset)
+    trainer.set_callback('on_batch_end', batch_end_callback)
+    stop_iteration = trainer.run()
+    if stop_iteration != -1:
+        print(f'The final iteration of this round is {stop_iteration}!')
+    else:
+        print('It cannot reach 0.9 acc within max_iteration steps...')
+    result.append(stop_iteration)
+
+    print(result)
+
+def data_order_test_2_2():
+    config = get_config()
+    setup_logging(config)
+    print(config.model.init_type)
+
+    # start training
+    data_seed = 0
+    result = []
+    
+    if config.trainer.task == "ChickenRabbit":
+        train_dataset = ChickenRabbitDataset(config.data, split='train', seed=data_seed)
+        test_dataset  = ChickenRabbitDataset(config.data, split='test', seed=data_seed)
+    else:
+        train_dataset = GCDDataset(config.data, split='train', seed=data_seed)
+        test_dataset  = GCDDataset(config.data, split='test', seed=data_seed)
+
+    config.model.vocab_size = train_dataset.get_vocab_size()
+    config.model.block_size = train_dataset.get_block_size()
+    
+    for i in tqdm(range(10)):
+        set_seed(i)
         model = GPT(config.model)
 
         trainer = Trainer(config.trainer, model, train_dataset, test_dataset)
@@ -177,9 +215,48 @@ def data_order_test():
 
     print(result)
 
+def data_order_test_2_2_gen_sample():
+    config = get_config()
+    setup_logging(config)
+    print(config.model.init_type)
+
+    # start training
+    result = []
+    
+    for i in tqdm(range(10)):
+        set_seed(i)
+        for j in range(10):
+            data_seed = i*10 + j
+
+            if config.trainer.task == "ChickenRabbit":
+                train_dataset = ChickenRabbitDataset(config.data, split='train', seed=data_seed)
+                test_dataset  = ChickenRabbitDataset(config.data, split='test', seed=data_seed)
+            else:
+                train_dataset = GCDDataset(config.data, split='train', seed=data_seed)
+                test_dataset  = GCDDataset(config.data, split='test', seed=data_seed)
+
+            config.model.vocab_size = train_dataset.get_vocab_size()
+            config.model.block_size = train_dataset.get_block_size()
+
+            model = GPT(config.model)
+
+            trainer = Trainer(config.trainer, model, train_dataset, test_dataset)
+            trainer.set_callback('on_batch_end', batch_end_callback)
+            stop_iteration = trainer.run()
+            if stop_iteration != -1:
+                print(f'The final iteration of this round is {stop_iteration}!')
+            else:
+                print('It cannot reach 0.9 acc within max_iteration steps...')
+            result.append(stop_iteration)
+
+    print(result)
+    write2txt(result, config)
+
 def main():
     # weight_init_test()
-    data_order_test()
+    # data_order_test()
+    data_order_test_2_1()
+    # data_order_test_2_2_gen_sample()
 
 if __name__ == '__main__':
     main()    

@@ -110,8 +110,8 @@ class GPT(nn.Module):
         C.embd_pdrop = 0.1
         C.resid_pdrop = 0.1
         C.attn_pdrop = 0.1
-        # Gaussian or Xavier or Constant
-        C.init_type = 'Const'
+        # Gaussian or Xavier or Const
+        C.init_type = 'Xavier'
         return C
 
     def __init__(self, config):

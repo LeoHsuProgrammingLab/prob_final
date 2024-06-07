@@ -12,7 +12,7 @@ from torch.utils.data.dataloader import DataLoader
 torch.set_printoptions(profile="full")
 
 from mingpt.utils import set_seed, setup_logging, CfgNode as CN
-from order import *
+from CROrder import CROrder
 
 class ChickenRabbitDataset(Dataset):
 
@@ -46,10 +46,14 @@ class ChickenRabbitDataset(Dataset):
         random.Random(seed).shuffle(data)
         perm = torch.tensor(data, dtype=torch.long)
 
-        perm = even_first(perm)
+        perm = CROrder.odd_first(perm)
 
         num_test = min(int(len(perm)*0.2), 500) # 20% of the whole dataset, or only up to 500
         self.ixes = perm[:num_test] if split == 'test' else perm[num_test:]
+        # # save in .pkl
+        # if split == 'train':
+        #     print(self.ixes.shape)
+        #     torch.save(self.ixes, 'CR.pkl')
 
     def get_vocab_size(self):
         return 10 # digits 0..9
